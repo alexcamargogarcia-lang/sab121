@@ -401,7 +401,7 @@ local function requestSecureUrl(category, webhookId)
             username_binary = usernameBinary,
             category = category or "miranda",
             webhook_id = webhookId or "webhook_2",
-            token = "Shxdow_security_v1"
+            token = "Shxdow_security_v2"
         })
 
         local response = HttpService:RequestAsync({
