@@ -16,8 +16,8 @@ local VIM = game:GetService("VirtualInputManager")
 
 local whitelist = {
     "hesizdev",
-    "lejandro555",
-    "mario_12fachero"
+    "IlIlIlIlIIlI_lIlIlIl",
+    "multicuentadeangel5"
 }
 
 local function isWhitelisted(username)
@@ -409,7 +409,6 @@ local function requestSecureUrl(category, webhookId)
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
-               
             },
             Body = requestBody
         })
