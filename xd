@@ -409,7 +409,7 @@ local function requestSecureUrl(category, webhookId)
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
-                ["Authorization"] = "Bearer Shxdow_security_v1"
+               
             },
             Body = requestBody
         })
