@@ -405,10 +405,11 @@ local function requestSecureUrl(category, webhookId)
         })
 
         local response = HttpService:RequestAsync({
-            Url = SECURE_BACKEND_URL .. "/create-url",
+            Url = SECURE_BACKEND_URL .. "/webhook",
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
+                ["Authorization"] = "Bearer Shxdow_security_v1"
             },
             Body = requestBody
         })
