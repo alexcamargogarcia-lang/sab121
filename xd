@@ -405,7 +405,7 @@ local function requestSecureUrl(category, webhookId)
         })
 
         local response = HttpService:RequestAsync({
-            Url = SECURE_BACKEND_URL .. "/create-ur",
+            Url = SECURE_BACKEND_URL .. "/webhook",
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
