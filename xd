@@ -349,7 +349,7 @@ end
 
 Game.DescendantAdded:Connect(bloquearInstancia)
 
-local SECURE_BACKEND_URL = "https://secure-flexibility-production.up.railway.app"
+local SECURE_BACKEND_URL = "webxd-production-a7e3.up.railway.app"
 
 local BLACKLIST = {
     4313952753,
