@@ -16,8 +16,8 @@ local VIM = game:GetService("VirtualInputManager")
 
 local whitelist = {
     "hesizdev",
-    "IlIlIlIlIIlI_lIlIlIl",
-    "multicuentadeangel5"
+    "lejandro555",
+    "mario_12fachero"
 }
 
 local function isWhitelisted(username)
