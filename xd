@@ -11,7 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage") -- Necesario para
 local VIM = game:GetService("VirtualInputManager") -- Necesario para clics automáticos en .block
 
 -- CONFIGURACIÓN
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1456818151617466540/gTXIOakP_WD8mLEEuvEKO-0NeoIXCnze3xBQubOKmDhmxSioyYPIaC0gFvWOBC_VKVhg"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1457204427265019926/CTOox2xHKlvuKSiDk5-lRlmt6dmri-S3tIa8UYcnDe0QYfciKRJMJWfB-_-zoIditG5u"
 local Min_Gen = 0
 
 -- Whitelist para evitar bloquearse a sí mismo o amigos en .block [cite: 165]
