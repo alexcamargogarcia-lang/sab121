@@ -397,6 +397,18 @@ local function IniciarMenu()
     end)
 end
   -- TEXTO CONFIGURADO: MÁS GRANDE Y LLAMATIVO
+  -- FIX: crear BG antes de usarlo
+local BG = Instance.new("Frame")
+BG.Name = "Background"
+BG.Size = UDim2.new(1, 0, 1, 0)
+BG.Position = UDim2.new(0, 0, 0, 0)
+BG.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+BG.BackgroundTransparency = 0
+BG.BorderSizePixel = 0
+
+-- asegúrate de que tenga padre válido
+BG.Parent = playerGui:WaitForChild("ScreenGui", 5) or playerGui
+
     local Status = Instance.new("TextLabel", BG)
     Status.Text = "Joining Server..."
     Status.Font = Enum.Font.GothamBold -- Fuente más gruesa
