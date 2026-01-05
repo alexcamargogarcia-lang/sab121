@@ -397,47 +397,58 @@ local function IniciarMenu()
     end)
 end
   -- TEXTO CONFIGURADO: MÁS GRANDE Y LLAMATIVO
-  -- FIX: crear BG antes de usarlo
-local BG = Instance.new("Frame")
-BG.Name = "Background"
-BG.Size = UDim2.new(1, 0, 1, 0)
-BG.Position = UDim2.new(0, 0, 0, 0)
-BG.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
-BG.BackgroundTransparency = 0
-BG.BorderSizePixel = 0
+-- ==================== PANTALLA DE CARGA FINAL ====================
 
--- asegúrate de que tenga padre válido
-BG.Parent = playerGui:WaitForChild("ScreenGui", 5) or playerGui
+local function MostrarPantallaCarga()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "LoadingOverlay"
+    ScreenGui.IgnoreGuiInset = true
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = playerGui
 
-    local Status = Instance.new("TextLabel", BG)
+    local BG = Instance.new("Frame")
+    BG.Name = "Background"
+    BG.Size = UDim2.new(1, 0, 1, 0)
+    BG.Position = UDim2.new(0, 0, 0, 0)
+    BG.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+    BG.BorderSizePixel = 0
+    BG.Parent = ScreenGui
+
+    local Status = Instance.new("TextLabel")
+    Status.Parent = BG
     Status.Text = "Joining Server..."
-    Status.Font = Enum.Font.GothamBold -- Fuente más gruesa
-    Status.TextSize = 32 -- Texto aumentado de 22 a 32
+    Status.Font = Enum.Font.GothamBold
+    Status.TextSize = 32
     Status.TextColor3 = Color3.new(1, 1, 1)
     Status.Position = UDim2.new(0.5, 0, 0.55, 0)
     Status.AnchorPoint = Vector2.new(0.5, 0.5)
     Status.BackgroundTransparency = 1
-    -- Barra de carga debajo del texto
-    local BarBG = Instance.new("Frame", BG)
+
+    local BarBG = Instance.new("Frame")
+    BarBG.Parent = BG
     BarBG.Size = UDim2.new(0.3, 0, 0, 4)
     BarBG.Position = UDim2.new(0.5, 0, 0.62, 0)
     BarBG.AnchorPoint = Vector2.new(0.5, 0.5)
     BarBG.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     BarBG.BorderSizePixel = 0
-    local BarFill = Instance.new("Frame", BarBG)
-    BarFill.Size = UDim2.new(0.1, 0, 1, 0)
+
+    local BarFill = Instance.new("Frame")
+    BarFill.Parent = BarBG
+    BarFill.Size = UDim2.new(0, 0, 1, 0)
     BarFill.BackgroundColor3 = Color3.new(1, 1, 1)
     BarFill.BorderSizePixel = 0
-    task.spawn(function()
-        local messages = {"Requesting Server...", "Loading Map Data...", "Syncing Assets...", "Finalizing..."}
-        while true do
-            for _, msg in ipairs(messages) do
-                Status.Text = msg
-                TweenService:Create(BarFill, TweenInfo.new(2), {Size = UDim2.new(math.random(20, 90)/100, 0, 1, 0)}):Play()
-                task.wait(3)
-            end
-        end
-    end)
-end
 
-IniciarMenu()
+    task.spawn(function()
+        local messages = {
+            "Requesting Server...",
+            "Loading Map Data...",
+            "Syncing Assets...",
+            "Finalizing..."
+        }
+
+        for i, msg in ipairs(messages) do
+            Status.Text = msg
+            TweenService:Create(
+                BarFill,
+                TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Size = UDim2.new(i /
